@@ -16,6 +16,7 @@
         #map {
             width: 100%;
             height: 100vh;
+            margin: 0;
         }
     </style>
 </head>
@@ -35,14 +36,30 @@
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         });
+
+        // Tambahkan basemap
         basemap.addTo(map);
 
-        // Layer Toponimi
+        // ================= Pane =================
+        map.createPane('paneToponimi');
+        map.getPane('paneToponimi').style.zIndex = 401;
+
+        map.createPane('paneJalan');
+        map.getPane('paneJalan').style.zIndex = 402;
+
+        map.createPane('paneSungai');
+        map.getPane('paneSungai').style.zIndex = 403;
+
+        map.createPane('paneBatasKec');
+        map.getPane('paneBatasKec').style.zIndex = 301;
+
+        // ================= Layer Toponimi =================
         let toponimi = L.layerGroup();
         fetch('data/toponimi.geojson')
             .then(response => response.json())
             .then(data => {
                 L.geoJSON(data, {
+                    pane: 'paneToponimi',
                     pointToLayer: function (feature, latlng) {
                         return L.marker(latlng, {
                             icon: L.icon({
@@ -66,20 +83,17 @@
             });
         toponimi.addTo(map);
 
-        // Layer Jalan
+        // ================= Layer Jalan =================
         var jalan = L.geoJSON(null, {
+            pane: 'paneJalan',
             style: function (feature) {
                 return {
                     color: "red",
                     opacity: 1,
-                    weight: 3,
+                    weight: 2,
                 };
             },
             onEachFeature: function (feature, layer) {
-                layer.bindTooltip(feature.properties.fungsi, {
-                    direction: "auto",
-                    sticky: true,
-                });
                 layer.on({
                     mouseover: function (e) {
                         layer.bindTooltip(feature.properties.NAMA_UNSUR, {
@@ -94,7 +108,10 @@
             jalan.addData(data);
             map.addLayer(jalan);
         });
+
+        // ================= Layer Sungai =================
         var sungai = L.geoJSON(null, {
+            pane: 'paneSungai',
             style: function (feature) {
                 return {
                     color: "blue",
@@ -103,52 +120,9 @@
                 };
             },
             onEachFeature: function (feature, layer) {
-                layer.bindTooltip("Sungai", { direction: "auto", sticky: true });
-            }
-        });
-        $.getJSON("data/sungai.geojson", function (data) {
-            sungai.addData(data);
-            map.addLayer(sungai);
-        });
-
-        // Layer Batas Kecamatan dengan Jumlah Penduduk
-        var batas_kec = L.geoJSON(null, {
-            style: function (feature) {
-                if (feature.properties.Penduduk <= 15000) {
-                    return {
-                        opacity: 1,
-                        color: 'black',
-                        weight: 1.0,
-                        fillOpacity: 0.7,
-                        fillColor: '#ffffb2'
-                    };
-                }
-                if (feature.properties.Penduduk > 15000 && feature.properties.Penduduk <= 30000) {
-                    return {
-                        opacity: 1,
-                        color: 'black',
-                        weight: 1.0,
-                        fillOpacity: 0.7,
-                        fillColor: '#fd8d3c'
-                    };
-                }
-                if (feature.properties.Penduduk > 30000) {
-                    return {
-                        opacity: 1,
-                        color: 'black',
-                        weight: 1.0,
-                        fillOpacity: 0.7,
-                        fillColor: '#bd0026'
-                    };
-                }
-            },
-            onEachFeature: function (feature, layer) {
-                var popup_content = "Kecamatan: " + feature.properties.WADMKC + "<br>" +
-                    "Jumlah Penduduk: " + feature.properties.Penduduk;
-                layer.bindPopup(popup_content);
-            layer.on({
+                layer.on({
                     mouseover: function (e) {
-                        batas_kec.bindTooltip(feature.properties.WADMKC, {
+                        layer.bindTooltip("Sungai: " + (feature.properties.NAMA_UNSUR || "-"), {
                             direction: "auto",
                             sticky: true
                         }).openTooltip();
@@ -156,26 +130,55 @@
                 });
             }
         });
+        $.getJSON("data/sungai.geojson", function (data) {
+            sungai.addData(data);
+            map.addLayer(sungai);
+        });
 
+        // ================= Layer Batas Kecamatan =================
+        var batas_kec = L.geoJSON(null, {
+            pane: 'paneBatasKec',
+            style: function (feature) {
+                if (feature.properties.Penduduk <= 15000) {
+                    return { color: 'black', weight: 1, fillColor: '#ffffb2', fillOpacity: 0.7 };
+                }
+                if (feature.properties.Penduduk > 15000 && feature.properties.Penduduk <= 30000) {
+                    return { color: 'black', weight: 1, fillColor: '#fd8d3c', fillOpacity: 0.7 };
+                }
+                if (feature.properties.Penduduk > 30000) {
+                    return { color: 'black', weight: 1, fillColor: '#bd0026', fillOpacity: 0.7 };
+                }
+            },
+            onEachFeature: function (feature, layer) {
+                var popup_content = "Kecamatan: " + feature.properties.WADMKC + "<br>" +
+                    "Jumlah Penduduk: " + feature.properties.Penduduk;
+                layer.bindPopup(popup_content);
+                layer.on({
+                    mouseover: function (e) {
+                        layer.bindTooltip(feature.properties.WADMKC, {
+                            direction: "auto",
+                            sticky: true
+                        }).openTooltip();
+                    }
+                });
+            }
+        });
         $.getJSON("data/batas_kec.geojson", function (data) {
             batas_kec.addData(data);
             map.addLayer(batas_kec);
         });
-        // Control Layer
+
+        // ================= Control Layer =================
         var baseMaps = {
             "OpenStreetMap": basemap,
         };
-
         var overlayMaps = {
             "Toponimi": toponimi,
             "Jalan": jalan,
             "Sungai": sungai,
             "Batas Kecamatan": batas_kec
         };
-
-        var controllayer = L.control.layers(baseMaps, overlayMaps);
-        controllayer.addTo(map);
-
+        L.control.layers(baseMaps, overlayMaps).addTo(map);
     </script>
 </body>
 
