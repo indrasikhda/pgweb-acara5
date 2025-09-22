@@ -40,7 +40,7 @@
         // Tambahkan basemap
         basemap.addTo(map);
 
-        // ================= Pane =================
+        //  Pane 
         map.createPane('paneToponimi');
         map.getPane('paneToponimi').style.zIndex = 401;
 
@@ -53,7 +53,7 @@
         map.createPane('paneBatasKec');
         map.getPane('paneBatasKec').style.zIndex = 301;
 
-        // ================= Layer Toponimi =================
+        //  Layer Toponimi 
         let toponimi = L.layerGroup();
         fetch('data/toponimi.geojson')
             .then(response => response.json())
@@ -83,7 +83,7 @@
             });
         toponimi.addTo(map);
 
-        // ================= Layer Jalan =================
+        //  Layer Jalan 
         var jalan = L.geoJSON(null, {
             pane: 'paneJalan',
             style: function (feature) {
@@ -109,7 +109,7 @@
             map.addLayer(jalan);
         });
 
-        // ================= Layer Sungai =================
+        //  Layer Sungai 
         var sungai = L.geoJSON(null, {
             pane: 'paneSungai',
             style: function (feature) {
@@ -135,7 +135,7 @@
             map.addLayer(sungai);
         });
 
-        // ================= Layer Batas Kecamatan =================
+        // Layer Batas Kecamatan 
         var batas_kec = L.geoJSON(null, {
             pane: 'paneBatasKec',
             style: function (feature) {
@@ -168,7 +168,7 @@
             map.addLayer(batas_kec);
         });
 
-        // ================= Control Layer =================
+        // Control Layer 
         var baseMaps = {
             "OpenStreetMap": basemap,
         };
